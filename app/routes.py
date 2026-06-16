@@ -5,6 +5,7 @@ from fastapi import APIRouter, Request
 
 from app.schemas import LLMResponse, ProxyRequest
 from app.services.llm_client import LLMClient
+from app.services.metrics import ShadowMetrics
 from app.services.shadow import run_shadow_comparison
 
 router = APIRouter()
@@ -20,6 +21,12 @@ async def hello() -> dict[str, str]:
     return {"message": "hello world"}
 
 
+@router.get("/metrics")
+async def metrics(request: Request) -> dict[str, int | float]:
+    shadow_metrics: ShadowMetrics = request.app.state.shadow_metrics
+    return shadow_metrics.snapshot()
+
+
 @router.post("/v1/proxy", response_model=LLMResponse)
 async def proxy_to_primary(payload: ProxyRequest, request: Request) -> LLMResponse:
     client = LLMClient(request.app.state.http_client)
@@ -33,6 +40,7 @@ async def proxy_to_primary(payload: ProxyRequest, request: Request) -> LLMRespon
             candidate_url=settings.candidate_llm_url,
             request_payload=deepcopy(payload.model_dump()),
             primary_payload=deepcopy(primary_response),
+            metrics=request.app.state.shadow_metrics,
         )
     )
     request.app.state.shadow_tasks.add(shadow_task)

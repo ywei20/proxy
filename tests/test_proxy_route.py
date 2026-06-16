@@ -8,6 +8,7 @@ import pytest
 from app import routes
 from app.routes import proxy_to_primary
 from app.schemas import ProxyRequest
+from app.services.metrics import ShadowMetrics
 
 
 class FakeSettings:
@@ -58,6 +59,7 @@ def fake_request() -> SimpleNamespace:
         http_client=None,
         settings=FakeSettings(),
         shadow_tasks=set(),
+        shadow_metrics=ShadowMetrics(),
     )
     return SimpleNamespace(app=SimpleNamespace(state=state))
 

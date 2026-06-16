@@ -4,6 +4,7 @@ import httpx
 from fastapi import FastAPI
 
 from app.routes import router
+from app.services.metrics import ShadowMetrics
 from app.settings import Settings
 
 
@@ -13,6 +14,7 @@ async def lifespan(app: FastAPI):
     app.state.settings = settings
     app.state.http_client = httpx.AsyncClient(timeout=settings.llm_timeout_seconds)
     app.state.shadow_tasks = set()
+    app.state.shadow_metrics = ShadowMetrics()
     try:
         yield
     finally:

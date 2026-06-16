@@ -26,6 +26,7 @@ pyproject.toml               Project metadata and test configuration.
 - `lifespan()` in `app/main.py`: creates shared settings, HTTP client, and background task tracking.
 - `health()` in `app/routes.py`: returns `{"status": "ok"}` for a setup check.
 - `hello()` in `app/routes.py`: returns `{"message": "hello world"}` for a simple route check.
+- `metrics()` in `app/routes.py`: returns real-time in-memory shadow comparison metrics.
 - `proxy_to_primary()` in `app/routes.py`: calls the primary LLM, starts candidate shadow comparison, returns primary response.
 - `simulated_primary()` / `simulated_candidate()` in `app/routes.py`: fake LLM endpoints for local testing.
 - `LLMClient.post()` in `app/services/llm_client.py`: sends JSON with `httpx` and returns parsed JSON.
@@ -70,6 +71,7 @@ the forwarded URL shown there.
 python -m pip install -r requirements-dev.txt
 curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/hello
+curl http://127.0.0.1:8000/metrics
 python -m pytest
 ```
 
@@ -129,3 +131,32 @@ curl -X POST http://127.0.0.1:8000/v1/proxy \
 
 The Primary response still returns immediately, and the background comparison
 does not log `LLM output mismatch` because both `output` values are the same.
+
+## Metrics
+
+`/metrics` returns in-memory shadow comparison metrics for the running process:
+
+```bash
+curl http://127.0.0.1:8000/metrics
+```
+
+Example response:
+
+```json
+{
+  "total_comparisons": 2,
+  "matched_comparisons": 1,
+  "mismatched_comparisons": 1,
+  "failed_candidate_requests": 0,
+  "match_rate_percent": 50.0
+}
+```
+
+`match_rate_percent` is calculated from completed Candidate comparisons:
+
+```text
+matched_comparisons / total_comparisons * 100
+```
+
+Candidate failures are counted separately and do not change the match rate.
+Metrics reset when the app restarts.
