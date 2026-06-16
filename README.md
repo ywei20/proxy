@@ -117,3 +117,15 @@ curl -X POST http://127.0.0.1:8000/v1/proxy \
 ```
 
 The service returns the simulated primary response immediately. It also dispatches a detached candidate request in the background and logs a warning if the extracted JSON payloads differ.
+
+To make the simulated Candidate output match the simulated Primary output, pass
+`candidate_override`:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/proxy \
+  -H 'content-type: application/json' \
+  -d '{"prompt":"hello","metadata":{"request_id":"demo-2"},"candidate_override":{"answer":"hello","source":"primary"}}'
+```
+
+The Primary response still returns immediately, and the background comparison
+does not log `LLM output mismatch` because both `output` values are the same.
